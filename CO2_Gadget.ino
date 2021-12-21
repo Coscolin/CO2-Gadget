@@ -4,6 +4,9 @@
 /*****************************************************************************************************/
 /* If you are NOT using PlatformIO (You are using Arduino IDE) you must define your options bellow   */
 /* If you ARE using PlarformIO (NOT Arduino IDE) you must define your options in platformio.ini file */
+/*  THIS SECTION IS OUTDATED, IF YOU WANT TO USE ARDUINO YOU WILL HAVE TO SHORT IT OUT BY YOURSELF   */
+/*            I WILL PREPARE THE CODE AND WRITE NEW INSTRUCTIONS AS TIME PERMITS.                    */
+/*                                                                                                   */
 /**/ #ifndef PLATFORMIO
 /**/ // #define SUPPORT_OTA            // Needs SUPPORT_WIFI - CURRENTLY NOT WORKING AWAITING FIX
 /**/ #define SUPPORT_TFT
@@ -29,6 +32,7 @@ bool activeBLE =  true;
 bool activeWIFI = true;
 bool activeMQTT = true;
 bool debugSensors = false;
+bool displayReverse = false;
 bool showFahrenheit = false;
 uint16_t measurementInterval = 10;
 bool inMenu = false;
@@ -72,6 +76,9 @@ uint64_t lastButtonUpTimeStamp = millis(); // Last time button UP was pressed
 #include <ESPAsyncWebServer.h>
 #include <FS.h>
 #include <SPIFFS.h>
+
+// Function definitions 
+void reverseButtons(bool reversed);
 
 // clang-format off
 /*****************************************************************************************************/
