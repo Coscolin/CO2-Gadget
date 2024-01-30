@@ -1,6 +1,5 @@
 #ifndef CO2_Gadget_Menu_h
 #define CO2_Gadget_Menu_h
-
 // Based on
 // https://drive.google.com/file/d/1_qGqs3XpFQRoT-u5-GK8aJk6f0aI7EA3/view?usp=drive_web
 
@@ -92,6 +91,8 @@ char tempHostName[] = "                              ";
 char tempBLEDeviceId[] = "                              ";
 char tempCO2Sensor[] = "                              ";
 char tempESPNowAddress[] = "            ";
+uint tempSSID_selected=0;
+String tempSSID[] = {{"SSID0"}, {"SSID1"},{"SSID2"},{"SSID3"},{"SSID4"},{"SSID5"},{"SSID6"},{"SSID7"},{"SSID8"},{"SSID9"}};
 
 void setInMenu(bool isInMenu) {
     inMenu = isInMenu;
@@ -374,8 +375,67 @@ TOGGLE(activeOTA, activeOTAMenu, "OTA Enable: ", doNothing,noEvent, wrapStyle
   ,VALUE("OFF", false, doSetActiveOTA, exitEvent));
 #endif
 
+result doSelectWifi(eventMask e, navNode &nav, prompt &item) {
+  Serial.printf("-->[MENU] Select WiFi item %s\n", item);
+  Serial.printf("-->[MENU] event: ");
+  Serial.println(e);
+  Serial.flush();
+ showEvent(e, nav, item);
+  return proceed;
+}
+
+result doAvailableWiFis(eventMask e, navNode &nav, prompt &item) {
+  Serial.printf("-->[MENU] Select WiFi item %s\n", item);
+  Serial.printf("-->[MENU] event: ");
+  Serial.println(e);
+  Serial.flush();
+  tempSSID[0]="SSID0";
+  tempSSID[1]="SSID1";
+  tempSSID[2]="SSID2";
+  tempSSID[3]="SSID3";
+  tempSSID[4]="SSID4";
+  tempSSID[5]="SSID5";
+  tempSSID[6]="SSID6";
+  tempSSID[7]="SSID7";
+  tempSSID[8]="SSID8";
+  tempSSID[9]="SSID9";
+  return proceed;
+}
+
+MENU(searchWIFIMenu, "Search WiFi's", doAvailableWiFis, enterEvent, wrapStyle
+  ,OP("SSID0", doSelectWifi, enterEvent)
+  ,OP("SSID1", doSelectWifi, enterEvent)
+,EXIT("<Back"));
+
+
+//function to handle WiFi select
+// declared here and implemented bellow because we need
+// to give it as event handler for `WiFiPickMenu`
+// and we also need to refer to `WiFiPickMenu` inside the function
+result WiFiPick(eventMask event, navNode& nav, prompt &item);
+
+
+// WiFiPickMenu("WiFi ","/",WiFiPick,enterEvent);
+//caching 10 WiFi
+//WiFiScanClass<10> WiFiPickMenu("Search WiFi's","/",WiFiPick,enterEvent);
+
+//implementing the handler here after WiFiPick is defined...
+//result WiFiPick(eventMask event, navNode& nav, prompt &item) {
+  // switch(event) {//for now events are filtered only for enter, so we dont need this checking
+  //   case enterCmd:
+//      if (nav.root->navFocus==(navTarget*)&WiFiPickMenu) {
+//        Serial.println();
+//        Serial.print("selected WiFi:");
+//        Serial.println(WiFiPickMenu.selectedWiFi);
+//      }
+  //     break;
+  // }
+//  return proceed;
+//}
+
 MENU(wifiConfigMenu, "WIFI Config", doNothing, noEvent, wrapStyle
   ,SUBMENU(activeWIFIMenu)
+  ,SUBMENU(searchWIFIMenu)
   ,EDIT("SSID", tempWiFiSSID, ssidChars, doSetWiFiSSID, exitEvent, wrapStyle)
   ,EDIT("Pass:", tempWiFiPasswrd, allChars, doSetWiFiPasswrd, exitEvent, wrapStyle)
   ,EDIT("Host:", tempHostName, allChars, doSetHostName, exitEvent, wrapStyle)
