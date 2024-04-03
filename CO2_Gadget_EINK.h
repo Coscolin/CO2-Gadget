@@ -116,13 +116,6 @@ const GFXfont BigFont = NotoSans_Bold48pt7b;
 GxEPD2_BW<GxEPD2_290_GDEY029T94, GxEPD2_290_GDEY029T94::HEIGHT> display(GxEPD2_290_GDEY029T94(/*CS=5*/ EPD_CS, /*DC=*/EPD_DC, /*RST=*/EPD_RST, /*BUSY=*/EPD_BUSY));  // GDEY029T94  128x296, SSD1680, (FPC-A005 20.06.15)
 #endif // #ifdef EINKBOARDGDEM029T94
 
-
-int32_t iconState_wifi = -9999;
-int32_t iconState_BLE = -9999;
-int32_t iconState_Battery = -9999;
-int32_t iconState_mqtt = -9999;
-int32_t iconState_esp32 = -9999;
-
 // Define a structure for the locations of elements
 struct ElementLocations {
     int32_t co2X;
@@ -194,7 +187,7 @@ void setElementLocations() {
 #endif
 
 #if defined(EINKBOARDDEPG0213BN) || defined(EINKBOARDGDEM0213B74)
-    if (displayWidth == 212 && displayHeight == 104) {  // 212x104 DEPG0213BN, GDEM0213B74 and similar
+    if (displayWidth == 250 && displayHeight == 122) {  // 212x104 DEPG0213BN, GDEM0213B74 and similar
                                                         // GDEM0213B74 250x122 pixels
         elementPosition.co2X = 0;
         elementPosition.co2Y = 24;
@@ -270,6 +263,7 @@ void setElementLocations() {
     }
 #endif
 }
+
 void displayShowValues(bool forceRedraw = false);  // Forward declaration
 void drawMainScreen(bool force = false);           // Forward declaration
 
@@ -364,21 +358,6 @@ bool displayNotification(String notificationText, String notificationText2, noti
 //     } while (display.nextPage());
 // }
 
-void drawHorizontalCenterText(int16_t y, const String text) {
-    int16_t tbx, tby;
-    uint16_t tbw, tbh;
-
-    // Calculate text bounds
-    display.getTextBounds(text, 0, 0, &tbx, &tby, &tbw, &tbh);
-
-    // Center bounding box by transposition of origin
-    uint16_t x = ((display.width() - tbw) / 2) - tbx;
-
-    // Display text
-    display.setCursor(x, y);
-    display.print(text);
-}
-
 void drawTextAligned(int16_t x, int16_t y, int16_t w, int16_t h, const String text, char h_align = 'C', char v_align = 'C') {
     int16_t tbx, tby;
     uint16_t tbw, tbh;
@@ -416,29 +395,6 @@ void drawTextAligned(int16_t x, int16_t y, int16_t w, int16_t h, const String te
     // Display text
     display.setCursor(pos_x, pos_y);
     display.print(text);
-}
-
-void showPages() {
-    display.setRotation(0);
-    display.setFont(&SmallFont);
-    display.setTextColor(GxEPD_BLACK);
-    display.clearScreen(0);  // black
-    display.setFullWindow();
-    display.fillScreen(GxEPD_WHITE);
-    display.setCursor(0, 10);
-    if (display.width() >= 300) {
-        display.print("would need ");
-        display.print(display.pages());
-        display.println(" pages of height ");
-        display.print(display.pageHeight());
-    } else {
-        display.println("would need");
-        display.print(display.pages());
-        display.println(" pages of");
-        display.print("height ");
-        display.print(display.pageHeight());
-    }
-    display.display(false);  // full update
 }
 
 void initDisplayFromDeepSleep(bool forceRedraw = false) {
@@ -613,47 +569,6 @@ void showBLEIcon(int32_t posX, int32_t posY, bool forceRedraw) {
         display.drawBitmap(posX + 3, posY + 3, iconBLE, 16, 16, GxEPD_BLACK);
     }
 }
-// =======
-    Serial.println("-->[EINK] Erasing values: CO2=" + String(oldCO2Value) + ", Temp=" + String(oldTempValue) + ", Hum=" + String(oldHumiValue));
-    Serial.println("-->[EINK] Showing values: CO2=" + String(co2) + ", Temp=" + String(temp) + ", Hum=" + String(hum));
-
-    // Erase old values
-    display.setTextColor(GxEPD_WHITE);
-    display.setFont(&BigFont);
-    display.setTextSize(1);
-    drawHoritzontalCenterText((display.height() / 2) + 40, String(oldCO2Value));
-    display.setFont(&SmallFont);
-    #if defined(EINKBOARDDEPG0213BN) || defined(EINKBOARDGDEM0213B74)
-    display.setCursor(55, 12);
-    display.printf("%.1fºC", oldTempValue);
-    display.setCursor((display.width()) - 5 * 9 - 35, 12);
-    #endif
-    #if defined(EINKBOARDGDEW0213M21)
-    display.setCursor(40, 12);
-    display.printf("%.1fºC", oldTempValue);
-    display.setCursor((display.width()) - 5 * 6 - 50, 12);
-    #endif
-    display.printf("%.0f%%", oldHumiValue);
-
-    // Show values
-    display.setTextColor(GxEPD_BLACK);
-    display.setFont(&BigFont);
-    display.setTextSize(1);
-    drawHoritzontalCenterText((display.height() / 2) + 40, String(co2));
-    display.setFont(&SmallFont);
-    
-    #if defined(EINKBOARDDEPG0213BN) || defined(EINKBOARDGDEM0213B74)
-    display.setCursor(55, 12);
-    display.printf("%.1fºC", temp);
-    display.setCursor((display.width()) - 5 * 9 - 35, 12);
-    #endif
-    #if defined(EINKBOARDGDEW0213M21)
-    display.setCursor(40, 12);
-    display.printf("%.1fºC", temp);
-    display.setCursor((display.width()) - 5 * 6 - 50, 12);
-    #endif
-    display.printf("%.0f%%", hum);
-// low-power-eink-new-layout
 
 void showMQTTIcon(int32_t posX, int32_t posY, bool forceRedraw) {
     //    display.fillRect(posX, posY, 16+6, 16+6, GxEPD_WHITE);
