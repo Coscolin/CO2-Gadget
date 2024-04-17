@@ -19,7 +19,7 @@
 
 // Variables for e-ink functionality -> move to platformio.ini or CO2_Gadget.ino in a future for menu config
 uint16_t co2_HYSTERESIS = 15;        // Minimum change in CO2 value to refresh display
-uint16_t numPartialUpdates = 10;     // Maximun number o partial updates until next Full screen refresh
+uint16_t numPartialUpdates = 5;      // Maximun number o partial updates until next Full screen refresh
 int16_t timeBetweenEinkUpdates = 5;  // 5 seconds between refresh display
 
 #if defined(EINKBOARDDEPG0213BN) || defined(EINKBOARDGDEM0213B74) || defined(EINKBOARDGDEW0213M21)
@@ -454,9 +454,11 @@ void drawMainScreen(bool fullRefresh) {
     display.drawBitmap(elementPosition.tempXUnits, elementPosition.tempYUnits, iconTempBW, 16, 16, GxEPD_BLACK);
     display.drawBitmap(elementPosition.humidityXUnits, elementPosition.humidityYUnits, iconHumidityBW, 16, 16, GxEPD_BLACK);
     if (fullRefresh) {  // FIRST display
-        display.setFont(&BigFont);
+        display.setFont(&SmallFont);
         display.setTextColor(GxEPD_BLACK);
-        drawTextAligned(elementPosition.co2X, elementPosition.co2Y, elementPosition.co2W, elementPosition.co2H, "CO2", 'c', 'c');
+        drawTextAligned(elementPosition.co2X, elementPosition.co2Y, elementPosition.co2W, elementPosition.co2H, "Loading...", 'c', 't');
+        display.setFont(&BigFont);
+        drawTextAligned(elementPosition.co2X, elementPosition.co2Y, elementPosition.co2W, elementPosition.co2H, "CO2", 'c', 'b');
     }
     showCO2(co2, elementPosition.co2X, elementPosition.co2Y, true);
     showTemperature(temp, elementPosition.tempXValue, elementPosition.tempYValue, true);
@@ -482,7 +484,7 @@ void drawMainScreen(bool fullRefresh) {
 bool showBatteryIcon(int32_t posX, int32_t posY, bool forceRedraw) {
     RTC_DATA_ATTR static int16_t oldBatteryValue = -1;
     int16_t newBatteryValue;
-
+    display.fillRect(posX, posY, 32, 16, GxEPD_WHITE);  // clear
     publishMQTTLogData("-->[EINK] Battery Level: " + String(batteryLevel) + "%   Battery voltage: " + String(batteryVoltage) + "V");
     // Serial.println("-->[EINK] Drawn battery icon at " + String(posX) + ", " + String(posY) + " with level " + String(batteryLevel) + "% and voltage " + String(batteryVoltage) + "V");
     if (workingOnExternalPower) {
@@ -544,7 +546,7 @@ bool showCO2(uint16_t co2, int32_t posX, int32_t posY, bool forceRedraw) {
     drawTextAligned(elementPosition.co2X, elementPosition.co2Y, elementPosition.co2W, elementPosition.co2H, String(co2), 'c', 'c');
 
 #ifdef DEBUG_EINK
-    Serial.println("-->[EINK] Drawn CO2 value: " + String(co2) + " at: " + String(posX) + ", " + String(posY) + " in: " + __func__);
+    // Serial.println("-->[EINK] Drawn CO2 value: " + String(co2) + " at: " + String(posX) + ", " + String(posY) + " in: " + __func__);
 #endif
     oldCO2Value = co2;
     return true;
