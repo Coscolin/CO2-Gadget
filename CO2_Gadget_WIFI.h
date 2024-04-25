@@ -644,13 +644,136 @@ void WiFiStationDisconnected(WiFiEvent_t event, WiFiEventInfo_t info) {
     }
 }
 
+String getCO2GadgetStatusAsJson() {
+    StaticJsonDocument<512> doc;
+    doc["CO2"] = co2;
+    doc["Temperature"] = temp;
+    doc["Humidity"] = hum;
+    doc["WiFiStatus"] = WiFi.status();
+    doc["SSID"] = WiFi.SSID();
+#ifndef WIFI_PRIVACY
+    doc["wifiPass"] = wifiPass;
+#endif
+    doc["IP"] = WiFi.localIP().toString();
+    doc["RSSI"] = WiFi.RSSI();
+    doc["MACAddress"] = MACAddress;
+    doc["hostName"] = hostName;
+#ifdef SUPPORT_MQTT
+    doc["rootTopic"] = rootTopic;
+    doc["discoveryTopic"] = discoveryTopic;
+    doc["mqttClientId"] = mqttClientId;
+    doc["mqttBroker"] = mqttBroker;
+    doc["mqttUser"] = mqttUser;
+#ifndef WIFI_PRIVACY
+    doc["mqttPass"] = mqttPass;
+#endif
+#ifdef SUPPORT_ESPNOW
+    char peerAddressString[18];
+    snprintf(peerAddressString, sizeof(peerAddressString),
+             "%02X:%02X:%02X:%02X:%02X:%02X",
+             peerESPNowAddress[0], peerESPNowAddress[1], peerESPNowAddress[2],
+             peerESPNowAddress[3], peerESPNowAddress[4], peerESPNowAddress[5]);
+    doc["peerESPNowAddress"] = peerAddressString;
+#endif
+#endif
+    doc["activeWIFI"] = activeWIFI;
+#ifdef SUPPORT_MQTT
+    doc["activeMQTT"] = activeMQTT;
+#endif
+#ifdef SUPPORT_BLE
+    doc["activeBLE"] = activeBLE;
+#endif
+#ifdef SUPPORT_OTA
+    doc["activeOTA"] = activeOTA;
+#endif
+    doc["troubledWiFi"] = troubledWIFI;
+#ifdef SUPPORT_MQTT
+    doc["troubledMQTT"] = troubledMQTT;
+#endif
+#ifdef SUPPORT_ESPNOW
+    doc["troubledESPNOW"] = troubledESPNOW;
+#endif
+    doc["measurementInterval"] = measurementInterval;
+    doc["calibrationValue"] = calibrationValue;
+    doc["pendingCalibration"] = pendingCalibration;
+    doc["freeheap"] = ESP.getFreeHeap();
+    doc["uptime"] = millis();
+    String output;
+    serializeJson(doc, output);
+    return output;
+}
+
 const char *PARAM_INPUT_1 = "MeasurementInterval";
 const char *PARAM_INPUT_2 = "CalibrateCO2";
 
 void initWebServer() {
     SPIFFS.begin();
 
-    server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.html");
+    // server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.html");
+    // server.serveStatic("/", SPIFFS, "/index.html");
+    // server.serveStatic("/index.html", SPIFFS, "/index.html");
+    // server.serveStatic("/preferences.html", SPIFFS, "/preferences.html");
+    // server.serveStatic("/status.html", SPIFFS, "/status.html");
+    // server.serveStatic("favicon.ico", SPIFFS, "/favicon.png");
+    // server.serveStatic("main.js", SPIFFS, "/main.js");
+    // server.serveStatic("style.css", SPIFFS, "/style.css");
+    // server.serveStatic("preferences.js", SPIFFS, "/preferences.js");
+
+    server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+        /** GZIPPED CONTENT ***/
+        AsyncWebServerResponse *response = request->beginResponse(SPIFFS, "/index.html.gz", "text/html");
+        response->addHeader("Content-Encoding", "gzip");
+        request->send(response);
+    });
+
+    server.on("/index.html", HTTP_GET, [](AsyncWebServerRequest *request) {
+        /** GZIPPED CONTENT ***/
+        AsyncWebServerResponse *response = request->beginResponse(SPIFFS, "/index.html.gz", "text/html");
+        response->addHeader("Content-Encoding", "gzip");
+        request->send(response);
+    });
+
+    server.on("/preferences.html", HTTP_GET, [](AsyncWebServerRequest *request) {
+        /** GZIPPED CONTENT ***/
+        AsyncWebServerResponse *response = request->beginResponse(SPIFFS, "/preferences.html.gz", "text/html");
+        response->addHeader("Content-Encoding", "gzip");
+        request->send(response);
+    });
+
+    server.on("/status.html", HTTP_GET, [](AsyncWebServerRequest *request) {
+        /** GZIPPED CONTENT ***/
+        AsyncWebServerResponse *response = request->beginResponse(SPIFFS, "/status.html.gz", "text/html");
+        response->addHeader("Content-Encoding", "gzip");
+        request->send(response);
+    });
+
+    server.on("/main.js", HTTP_GET, [](AsyncWebServerRequest *request) {
+        /** GZIPPED CONTENT ***/
+        AsyncWebServerResponse *response = request->beginResponse(SPIFFS, "/main.js.gz", "application/javascript");
+        response->addHeader("Content-Encoding", "gzip");
+        request->send(response);
+    });
+
+    server.on("/preferences.js", HTTP_GET, [](AsyncWebServerRequest *request) {
+        /** GZIPPED CONTENT ***/
+        AsyncWebServerResponse *response = request->beginResponse(SPIFFS, "/preferences.js.gz", "application/javascript");
+        response->addHeader("Content-Encoding", "gzip");
+        request->send(response);
+    });
+
+    server.on("/style.css", HTTP_GET, [](AsyncWebServerRequest *request) {
+        /** GZIPPED CONTENT ***/
+        AsyncWebServerResponse *response = request->beginResponse(SPIFFS, "/style.css.gz", "text/css");
+        response->addHeader("Content-Encoding", "gzip");
+        request->send(response);
+    });
+
+    server.on("/favicon.ico", HTTP_GET, [](AsyncWebServerRequest *request) {
+        /** GZIPPED CONTENT ***/
+        AsyncWebServerResponse *response = request->beginResponse(SPIFFS, "/favicon.png.gz", "image/png");
+        response->addHeader("Content-Encoding", "gzip");
+        request->send(response);
+    });
 
     server.on("/readCO2", HTTP_GET, [](AsyncWebServerRequest *request) {
         request->send(200, "text/plain", String(co2));
@@ -714,13 +837,17 @@ void initWebServer() {
 
     server.on("/getActualSettingsAsJson", HTTP_GET, [](AsyncWebServerRequest *request) {
     String preferencesJson = getActualSettingsAsJson();
+    Serial.println(preferencesJson);
     request->send(200, "application/json", preferencesJson); });
 
-    // Serve the preferences page
-    server.on("/preferences.html", HTTP_GET, [](AsyncWebServerRequest *request) {
-        request->send(SPIFFS, "/preferences.html", String(), false, processor);
-    });
+    server.on("/getVersion", HTTP_GET, [](AsyncWebServerRequest *request) {
+    String versionJson = getCO2GadgetVersionAsJson();
+    request->send(200, "application/json", versionJson); });
 
+    server.on("/status", HTTP_GET, [](AsyncWebServerRequest *request) {
+    String statusJson = getCO2GadgetStatusAsJson();
+    request->send(200, "application/json", statusJson); });
+    
     // Trigger a software reset
     server.on("/restart", HTTP_GET, [](AsyncWebServerRequest *request) {
         request->send(200, "text/plain", "ESP32 restart initiated");
@@ -731,6 +858,7 @@ void initWebServer() {
     server.onNotFound([](AsyncWebServerRequest *request) {
         request->send(400, "text/plain", "Not found");
     });
+
     AsyncCallbackJsonWebHandler *handler = new AsyncCallbackJsonWebHandler("/savepreferences", [](AsyncWebServerRequest *request, JsonVariant &json) {
         StaticJsonDocument<2048> data;
         if (json.is<JsonArray>()) {
@@ -856,7 +984,7 @@ void initWifi() {
         Serial.println("-->[WiFi] HTTP server started");
         printWiFiStatus();
 
-        troubledMQTT = false; // Try to connect to MQTT broker on next loop if needed
+        troubledMQTT = false;  // Try to connect to MQTT broker on next loop if needed
     }
 }
 
